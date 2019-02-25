@@ -2,7 +2,7 @@
   "name": "KotlinMultiplatformPlayground-js",
   "description": "KotlinMultiplatformPlayground-js",
   "license": "Apache-2.0",
-  "repository": "http://github.com/elizarov/KotlinMultiplatformPlayground",
+  "repository": "https://github.com/elizarov/KotlinMultiplatformPlayground",
   "devDependencies": {
     "mocha": "^4.1.0"
   },
