@@ -1,0 +1,14 @@
+https://jcenter.bintray.com/;;Repos
+http://kotlin.bintray.com/kotlinx;;Repos
+https://jcenter.bintray.com/;;Buildscript
+https://kotlin.bintray.com/kotlinx;;Buildscript
+https://plugins.gradle.org/m2/;;Buildscript
+https://dl.bintray.com/jetbrains/kotlin-native-dependencies;;Buildscript
+https://jcenter.bintray.com/;/common;Repos
+http://kotlin.bintray.com/kotlinx;/common;Repos
+https://jcenter.bintray.com/;/js;Repos
+http://kotlin.bintray.com/kotlinx;/js;Repos
+https://jcenter.bintray.com/;/jvm;Repos
+http://kotlin.bintray.com/kotlinx;/jvm;Repos
+https://jcenter.bintray.com/;/native;Repos
+http://kotlin.bintray.com/kotlinx;/native;Repos
