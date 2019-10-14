@@ -2,3 +2,17 @@
 .idea
 build
 node_modules
+
+js/web/js/generated
+.DS_Store
+*.iml
+
+classes/
+build/
+client/build/
+server/build/
+
+out/
+server/out/
+client/out/
+

@@ -2,6 +2,12 @@ apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
     expectedBy project(':common')
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile "org.slf4j:slf4j-simple:1.7.25"
+    compile group: 'io.javalin', name: 'javalin', version: '3.5.0'
+    compile "com.fasterxml.jackson.core:jackson-databind:2.10.0.pr1"
+
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testCompile "junit:junit:4.12"
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
@@ -11,5 +17,28 @@ dependencies {
 tasks.withType(compileKotlin.getClass()) {
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "AppKt"
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+task copyClient(type: Copy) {
+    from project(':js').file('web')
+    into file('out/web')
+}
+
+jar.dependsOn(copyClient)
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources", "out"
+        }
     }
 }

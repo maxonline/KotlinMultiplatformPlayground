@@ -1,3 +1,3 @@
-# KotlinMultiplatformPlayground
+# KotlinMultiplayerWebGame
 
-Stub for Kotlin Multiplatform project.
+Template project for creating Kotlin web games with Websocket server and shared client-server code.

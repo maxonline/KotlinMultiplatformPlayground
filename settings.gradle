@@ -1,6 +1,5 @@
-rootProject.name = 'KotlinMultiplatformPlayground'
+rootProject.name = 'KotlinMultiplayerWebGameTemplate'
 
 include 'common'
 include 'jvm'
 include 'js'
-include 'native'
