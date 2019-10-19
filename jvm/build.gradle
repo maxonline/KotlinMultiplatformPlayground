@@ -1,4 +1,5 @@
 apply plugin: 'kotlin-platform-jvm'
+apply plugin: 'application'
 
 dependencies {
     expectedBy project(':common')
@@ -20,6 +21,10 @@ tasks.withType(compileKotlin.getClass()) {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+}
+
+application {
+    mainClassName = 'AppKt'
 }
 
 jar {
