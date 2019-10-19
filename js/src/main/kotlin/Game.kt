@@ -7,13 +7,16 @@ import games.perses.sprite.Sprite
 import games.perses.sprite.SpriteBatch
 import games.perses.text.Texts
 import games.perses.texture.Textures
+import org.khronos.webgl.*
 import org.w3c.dom.*
+import org.w3c.files.Blob
+import org.w3c.files.FileReader
 import kotlin.browser.document
 import kotlin.math.sin
 
 
 class GameScreen : Screen() {
-    var webSocket = WebSocket("ws://"  + document.location?.host)
+    var webSocket = WebSocket("ws://" + document.location?.host)
 
     var sprites = SpriteBatch()
 
@@ -37,8 +40,6 @@ class GameScreen : Screen() {
         Textures.dispose()
     }
 
-
-
     override fun update(time: Float, delta: Float) {
         Game.clearRed = sin((time / 3).toDouble()).toFloat()
         Game.clearGreen = sin((time / 5).toDouble()).toFloat()
@@ -53,7 +54,8 @@ class GameScreen : Screen() {
             timeSinceLastSend = timeSinceLastSend % intervalBetweenSends
             val openState: Short = 1
             if (webSocket.readyState == openState) {
-                webSocket.send(xyText);
+                val byteArray = Player(x.toShort(), y.toShort()).toByteArray()
+                webSocket.send(Int8Array(byteArray.toTypedArray()));
             }
         }
     }
@@ -61,7 +63,7 @@ class GameScreen : Screen() {
     override fun render() {
         sprites.draw(sprite, x, y, scale = 0.1f)
 
-        players.forEach { player -> sprites.draw(sprite, player.first, player.second, scale = 0.06f )}
+        players.forEach { player -> sprites.draw(sprite, player.first, player.second, scale = 0.06f) }
 
         sprites.render()
 
@@ -98,16 +100,21 @@ fun main(args: Array<String>) {
 
     gameScreen.webSocket.onmessage = { it ->
         if (it is MessageEvent) {
-            val data:String = it.data as String
+            val data: Blob = it.data as Blob
 
-            val players = data.split("+").filter { s -> s.isNotBlank() }
+            val fileReader = FileReader()
+            fileReader.addEventListener("loadend", {
+                val arrayBuffer = fileReader.result as ArrayBuffer
+                val uint8Array = Uint8Array(arrayBuffer)
+                val byteArray = ByteArray(uint8Array.byteLength) {index -> uint8Array[index]}
+                val players = toPlayers(byteArray)
 
-            gameScreen.players = players.map { s ->
-
-                val zys = s.split(",")
-                zys[0].toFloat() to zys[1].toFloat()
-            }
-
+                gameScreen.players = players
+                        .map { player ->
+                            player.x.toFloat() to player.y.toFloat()
+                        }
+            })
+            fileReader.readAsArrayBuffer(data)
         }
     }
 

@@ -4,6 +4,7 @@ apply plugin: 'kotlin-dce-js'
 dependencies {
     expectedBy project(':common')
     compile "perses.games:kudens:1.1.7"
+    compile "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
     compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
 }
