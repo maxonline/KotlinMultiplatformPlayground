@@ -11,8 +11,6 @@ fun main(args: Array<String>) {
 
     app.config.addStaticFiles("/web")
 
-    println(common())
-
     val sessionToPlayers = HashMap<Session, Player>()
 
     app.ws("/") { ws ->
@@ -39,7 +37,6 @@ fun main(args: Array<String>) {
                 val state = messagesFromOthers
                         .reduce() { a, b -> a.plus(b) }
                 session.remote.sendBytes(ByteBuffer.wrap(state))
-                println("sent ${messagesFromOthers.size}B´s to ${session.remoteAddress}")
             }
         }
         ws.onClose { context ->

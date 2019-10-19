@@ -68,7 +68,6 @@ class GameScreen : Screen() {
         sprites.render()
 
         Texts.drawText(0f, Game.view.height - 20, onScreenText, font = "bold 20pt Comic Sans", fillStyle = "black")
-        Texts.drawText(0f, Game.view.height - 60, common(), font = "bold 20pt Comic Sans", fillStyle = "black")
     }
 
 }
@@ -99,23 +98,21 @@ fun main(args: Array<String>) {
     })
 
     gameScreen.webSocket.onmessage = { it ->
-        if (it is MessageEvent) {
-            val data: Blob = it.data as Blob
+        val data: Blob = it.data as Blob
 
-            val fileReader = FileReader()
-            fileReader.addEventListener("loadend", {
-                val arrayBuffer = fileReader.result as ArrayBuffer
-                val uint8Array = Uint8Array(arrayBuffer)
-                val byteArray = ByteArray(uint8Array.byteLength) {index -> uint8Array[index]}
-                val players = toPlayers(byteArray)
+        val fileReader = FileReader()
+        fileReader.addEventListener("loadend", {
+            val arrayBuffer = fileReader.result as ArrayBuffer
+            val uint8Array = Uint8Array(arrayBuffer)
+            val byteArray = ByteArray(uint8Array.byteLength) {index -> uint8Array[index]}
+            val players = toPlayers(byteArray)
 
-                gameScreen.players = players
-                        .map { player ->
-                            player.x.toFloat() to player.y.toFloat()
-                        }
-            })
-            fileReader.readAsArrayBuffer(data)
-        }
+            gameScreen.players = players
+                    .map { player ->
+                        player.x.toFloat() to player.y.toFloat()
+                    }
+        })
+        fileReader.readAsArrayBuffer(data)
     }
 
     gameScreen.webSocket.onerror = {
