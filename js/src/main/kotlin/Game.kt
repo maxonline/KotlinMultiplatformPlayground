@@ -30,7 +30,7 @@ class GameScreen : Screen() {
 
     var timeSinceLastSend = 0f;
 
-    var players: List<Pair<Float, Float>> = emptyList()
+    var players: List<Player> = emptyList()
 
     override fun loadResources() {
         Textures.load("smiley", "img/smiley.png")
@@ -44,7 +44,7 @@ class GameScreen : Screen() {
         Game.clearRed = sin((time / 3).toDouble()).toFloat()
         Game.clearGreen = sin((time / 5).toDouble()).toFloat()
 
-        xyText = "$x,$y";
+        xyText = "${x.toInt()},${y.toInt()}";
         onScreenText = Game.fps.toString() + " " + xyText;
 
         timeSinceLastSend += delta
@@ -63,7 +63,7 @@ class GameScreen : Screen() {
     override fun render() {
         sprites.draw(sprite, x, y, scale = 0.1f)
 
-        players.forEach { player -> sprites.draw(sprite, player.first, player.second, scale = 0.06f) }
+        players.forEach { player -> sprites.draw(sprite, player.x.toFloat(), player.y.toFloat(), scale = 0.06f) }
 
         sprites.render()
 
@@ -105,12 +105,8 @@ fun main(args: Array<String>) {
             val arrayBuffer = fileReader.result as ArrayBuffer
             val uint8Array = Uint8Array(arrayBuffer)
             val byteArray = ByteArray(uint8Array.byteLength) {index -> uint8Array[index]}
-            val players = toPlayers(byteArray)
 
-            gameScreen.players = players
-                    .map { player ->
-                        player.x.toFloat() to player.y.toFloat()
-                    }
+            gameScreen.players = toPlayers(byteArray)
         })
         fileReader.readAsArrayBuffer(data)
     }
@@ -118,9 +114,10 @@ fun main(args: Array<String>) {
     gameScreen.webSocket.onerror = {
         if (it is ErrorEvent) {
             val data = it.message
-            println("error! $data")
+            println("ERROR:! $data")
+        }else{
+        println("UNKNOWN ERROR: ${it.type}")
         }
-        println("errror! ${it.type}")
     }
 
     Game.start(gameScreen)
