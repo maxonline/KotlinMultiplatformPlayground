@@ -8,13 +8,13 @@ Using technologies:
 * [Kotlinx-io](https://github.com/Kotlin/kotlinx-io)
 
 ## Structure
-* **Server** (see [jvm](jvm/)) 
+* **Server** (see [/jvm](jvm/)) 
 
    Javalin websocket server that also serves the static js code and assets from the client build.
-* **Client** (see [js](js/)) 
+* **Client** (see [/js](js/)) 
 
    Game base that uses Kudens and generates js code from Kotlin.
-* **Common** (see [common](common/)) 
+* **Common** (see [/common](common/)) 
 
    Shared code containing server-client message data classes and to/from byteArray functions using Kotlinx-io.
 
@@ -23,3 +23,4 @@ You can build and run the application from the root directory:
 ```
 ./gradlew run
 ```
+Then go to ``http://localhost:8080/``
