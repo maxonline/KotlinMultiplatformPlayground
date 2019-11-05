@@ -1,124 +1,123 @@
 import games.perses.game.DrawMode
 import games.perses.game.Game
+import games.perses.game.Game.html
 import games.perses.game.Screen
 import games.perses.input.EmptyInputProcessor
 import games.perses.input.Input
-import games.perses.sprite.Sprite
-import games.perses.sprite.SpriteBatch
 import games.perses.text.Texts
-import games.perses.texture.Textures
 import org.khronos.webgl.*
 import org.w3c.dom.*
 import org.w3c.files.Blob
 import org.w3c.files.FileReader
 import kotlin.browser.document
-import kotlin.math.sin
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 
+@ExperimentalUnsignedTypes
 class GameScreen : Screen() {
-    var webSocket = WebSocket("ws://" + document.location?.host)
+    val webSocket = WebSocket("ws://" + document.location?.host)
 
-    var sprites = SpriteBatch()
-
-    var sprite = Sprite("smiley")
-    var x = 0f
-    var y = 0f
-
-    var onScreenText = "hej"
-    var xyText = "$x,$y";
-
-
-    var timeSinceLastSend = 0f;
-
+    var playerX: Short = 0
+    var playerY: Short = 0
     var players: List<Player> = emptyList()
 
-    override fun loadResources() {
-        Textures.load("smiley", "img/smiley.png")
-    }
-
-    override fun closeResources() {
-        Textures.dispose()
-    }
+    private var secondsSinceLastSend = 0f
+    private var onScreenText = ""
 
     override fun update(time: Float, delta: Float) {
-        Game.clearRed = sin((time / 3).toDouble()).toFloat()
-        Game.clearGreen = sin((time / 5).toDouble()).toFloat()
+        onScreenText = "fps: ${Game.fps} CurrentPosition: ${playerX},${playerY}"
 
-        xyText = "${x.toInt()},${y.toInt()}";
-        onScreenText = Game.fps.toString() + " " + xyText;
+        secondsSinceLastSend += delta
 
-        timeSinceLastSend += delta
-
-        val intervalBetweenSends = 0.03f
-        if (timeSinceLastSend > intervalBetweenSends) {
-            timeSinceLastSend = timeSinceLastSend % intervalBetweenSends
-            val openState: Short = 1
-            if (webSocket.readyState == openState) {
-                val byteArray = Player(x.toShort(), y.toShort()).toByteArray()
-                webSocket.send(Int8Array(byteArray.toTypedArray()));
+        val secondsBetweenSends = 0.03f
+        if (secondsSinceLastSend > secondsBetweenSends) {
+            secondsSinceLastSend %= secondsBetweenSends
+            val openstate: Short = 1
+            if (webSocket.readyState == openstate) {
+                val byteArray = PlayerPosition(playerX, playerY).toByteArray()
+                webSocket.send(Int8Array(byteArray.toTypedArray()))
             }
         }
     }
 
     override fun render() {
-        sprites.draw(sprite, x, y, scale = 0.1f)
+        val context = html.canvas2d
 
-        players.forEach { player -> sprites.draw(sprite, player.x.toFloat(), player.y.toFloat(), scale = 0.06f) }
+        Texts.drawText(0f, Game.view.height - 20, onScreenText, font = "bold 20pt Arial", fillStyle = "white")
+        players.sortedByDescending { it.score }.forEachIndexed { i, player ->
+            val y = Game.view.height - (40 * i + 80)
+            Texts.drawText(60f, y, player.score.toString(), font = "bold 20pt Arial", fillStyle = "white")
+            context.drawBoxAt(player, 30, (y + 11).toShort(), 24.0)
+        }
 
-        sprites.render()
+        players.forEach { player ->
+            val width = player.distance.toDouble().pow(1.1)
+            context.drawBoxAt(player, player.x, player.y, width)
+        }
 
-        Texts.drawText(0f, Game.view.height - 20, onScreenText, font = "bold 20pt Comic Sans", fillStyle = "black")
+    }
+
+    private fun CanvasRenderingContext2D.drawBoxAt(player: Player, x: Short, y: Short, width: Double) {
+        fillStyle = "rgba(${player.red} ,${player.green} ,${player.blue}, 0.5 )"
+        val leftX = x - width / 2
+        val topY = y + width / 2
+
+        val convertedY = Game.view.height - topY
+        fillRect(leftX, convertedY, width, width)
     }
 
 }
 
-fun main(args: Array<String>) {
-    // set border color
-    document.body?.style?.backgroundColor = "#242"
+@ExperimentalUnsignedTypes
+fun main() {
+    document.body?.style?.backgroundColor = "#182"
 
     Game.view.setToWidth(1200f)
     Game.view.drawMode = DrawMode.LINEAR
 
-    Game.view.minAspectRatio = 1200f / 1400f
+    Game.view.minAspectRatio = 1200f / 800f
     Game.view.maxAspectRatio = 1200f / 800f
 
-    Game.setClearColor(0f, 0f, 0.5f, 0.5f)
+    Game.setClearColor(0f, 0f, 0f, 1f)
 
     val gameScreen = GameScreen()
 
     Input.setInputProcessor(object : EmptyInputProcessor() {
         override fun mouseMove(x: Float, y: Float) {
-            gameScreen.x = x;
-            gameScreen.y = y;
-        }
-
-        override fun pointerClick(pointer: Int, x: Float, y: Float) {
-            println("Mouse click: $pointer -> $x, $y")
+            gameScreen.playerX = x.roundToInt().toShort()
+            gameScreen.playerY = y.roundToInt().toShort()
         }
     })
 
-    gameScreen.webSocket.onmessage = { it ->
-        val data: Blob = it.data as Blob
-
-        val fileReader = FileReader()
-        fileReader.addEventListener("loadend", {
-            val arrayBuffer = fileReader.result as ArrayBuffer
-            val uint8Array = Uint8Array(arrayBuffer)
-            val byteArray = ByteArray(uint8Array.byteLength) {index -> uint8Array[index]}
-
-            gameScreen.players = toPlayers(byteArray)
-        })
-        fileReader.readAsArrayBuffer(data)
+    gameScreen.webSocket.onmessage = { messageEvent ->
+        messageEvent.readBytes(gameScreen) { bytes -> gameScreen.players = toPlayers(bytes) }
     }
 
     gameScreen.webSocket.onerror = {
         if (it is ErrorEvent) {
             val data = it.message
-            println("ERROR:! $data")
-        }else{
-        println("UNKNOWN ERROR: ${it.type}")
+            println("ERROR: $data")
+        } else {
+            println("UNKNOWN ERROR: ${it.type}")
         }
     }
 
     Game.start(gameScreen)
+}
+
+@ExperimentalUnsignedTypes
+private fun MessageEvent.readBytes(gameScreen: GameScreen, onReadDone: (ByteArray) -> Unit) {
+    val data: Blob = data as Blob
+
+    val fileReader = FileReader()
+    fileReader.addEventListener("loadend", {
+        val arrayBuffer = fileReader.result as ArrayBuffer
+        val uint8Array = Uint8Array(arrayBuffer)
+        val byteArray = ByteArray(uint8Array.byteLength) { index -> uint8Array[index] }
+
+        onReadDone(byteArray)
+        gameScreen.players = toPlayers(byteArray)
+    })
+    fileReader.readAsArrayBuffer(data)
 }
