@@ -13,14 +13,13 @@ val log: Logger = LoggerFactory.getLogger("main")
 @ExperimentalUnsignedTypes
 fun main() {
     val app = Javalin.create().apply {
-        exception(Exception::class.java) { e, _ -> log.error("Javalin error", e)}
+        exception(Exception::class.java) { e, _ -> log.error("Javalin error", e) }
         error(404) { ctx -> ctx.json("not found") }
     }.start(8080)
 
     app.config.addStaticFiles("/web")
 
     val sessionToPlayers = HashMap<Session, Player>()
-
     var currentGoalPixel = newGoalPixel()
 
     app.ws("/") { ws ->
@@ -30,34 +29,34 @@ fun main() {
             }
         }
         ws.onBinaryMessage { context ->
-            val message = context.data()
+            val byteArray = context.data().toByteArray()
             val session = context.session
-
-            val byteArray = message.toByteArray()
-
             val playerPosition = PlayerPosition(byteArray)
 
-            val distance = getDistance(playerPosition.x, playerPosition.y, currentGoalPixel)
-            val player = sessionToPlayers[session]?: createNewPlayer(playerPosition, distance)
-            sessionToPlayers[session] = player.copy(x = playerPosition.x, y = playerPosition.y, distance = distance)
-            if(distance.toInt() == 0){
+            val distanceToGoal = getDistance(playerPosition.x, playerPosition.y, currentGoalPixel)
+            val player = sessionToPlayers[session] ?: createNewPlayer(playerPosition, distanceToGoal.toShort())
+            sessionToPlayers[session] = player.copy(
+                    x = playerPosition.x,
+                    y = playerPosition.y,
+                    distance = distanceToGoal.toShort()
+            )
+            if (distanceToGoal == 0) {
+                sessionToPlayers[session] = player.copy(score = player.score.inc())
+
                 currentGoalPixel = newGoalPixel()
                 sessionToPlayers.putAll(sessionToPlayers.map { entry ->
                     val distanceToNewGoal = getDistance(entry.value.x, entry.value.y, currentGoalPixel)
-                    entry.key to entry.value.copy( distance = distanceToNewGoal)
+                    entry.key to entry.value.copy(distance = distanceToNewGoal.toShort())
                 })
-                sessionToPlayers[session] = player.copy(score = player.score.inc() )
+
             }
 
             session.remote.sendBytes(ByteBuffer.wrap(toByteArray(sessionToPlayers.values.toList())))
         }
         ws.onClose { context ->
             val session = context.session
-
-            run {
-                sessionToPlayers.remove(session)
-                log.info("Disconnected: ${session.remoteAddress}")
-            }
+            sessionToPlayers.remove(session)
+            log.info("Disconnected: ${session.remoteAddress}")
         }
         ws.onError { context ->
             log.warn("Got Websocket error from: ${context.session.remoteAddress}", context.error())
@@ -85,8 +84,8 @@ fun createNewPlayer(playerPosition: PlayerPosition, closeness: Short): Player {
     )
 }
 
-fun getDistance(x1: Short, y1: Short, xy2: Pair<Short, Short>): Short {
+fun getDistance(x1: Short, y1: Short, xy2: Pair<Short, Short>): Int {
     val x2 = xy2.first
     val y2 = xy2.second
-    return sqrt((x1.toDouble() - x2).pow(2.0) + (y1.toDouble() - y2).pow(2.0)).roundToInt().toShort()
+    return sqrt((x1.toDouble() - x2).pow(2.0) + (y1.toDouble() - y2).pow(2.0)).roundToInt()
 }
