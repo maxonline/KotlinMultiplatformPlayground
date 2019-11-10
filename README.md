@@ -1,6 +1,6 @@
 # Kotlin Multiplayer Web Game Template
 
-Template project for creating Kotlin web games with Websocket server and shared client-server code.
+Template project for multiplayer web games in Kotlin.
 
 Using technologies:
 * [Javalin](https://github.com/tipsy/javalin)
@@ -10,13 +10,13 @@ Using technologies:
 ## Structure
 * **Server** (see [/jvm](jvm/)) 
 
-   Javalin websocket server that also serves the static js code and assets from the client build.
+   Javalin websocket game server that also serves the static js code and assets from the client build.
 * **Client** (see [/js](js/)) 
 
-   Game base that uses Kudens and generates js code from Kotlin.
+   Game client that uses the game lib Kudens. Generates js code from Kotlin.
 * **Common** (see [/common](common/)) 
 
-   Shared code containing server-client message data classes and to/from byteArray functions using Kotlinx-io.
+   Shared code containing a custom server-client message protocol using Kotlinx-io.
 
 ## Build
 You can build and run the application from the root directory:
